@@ -13,16 +13,10 @@ public class Intervals {
   //array of intervals counting from the note C to the other notes
   public static final int[] semitonePositions = {0, 2, 4, 5, 7, 9, 11};
 
+
   static {
-    insertNotes();
-  }
-
-  private static List<String> insertNotes() {
-
     Stream<String> streamOfNotes = Stream.of("C", "D", "E", "F", "G", "A", "B");
     streamOfNotes.forEach(noteList::add);
-
-    return noteList;
   }
 
 
@@ -55,6 +49,22 @@ public class Intervals {
   }
 
 
+  public static String intervalIdentification(String[] args) {
+
+    validateIntervalIdentificationInput(args);
+
+    String firstNote = args[0];
+    String secondNote = args[1];
+
+    boolean descendMode = (args.length == 3 && Objects.equals(args[2], "dsc"));
+
+    int degreeAmount = countDegree(firstNote, secondNote, descendMode);
+    int semitoneAmount = countRealSemitones(firstNote, secondNote, descendMode);
+
+    return identifyIntervalByDegreeAndSemitone(degreeAmount, semitoneAmount);
+  }
+
+
   public static int countResultNoteNumber(int beginningNoteNumber, boolean descendMode,
       int degree) {
 
@@ -76,6 +86,7 @@ public class Intervals {
     }
 
   }
+
 
   public static int countSemitonesInInterval(String interval) {
 
@@ -123,9 +134,9 @@ public class Intervals {
 
       realSemitones = 12 - semitonePositions[firstNoteNumber] + semitonePositions[secondNoteNumber];
     }
-
     return realSemitones + semitonesByFirstNote + semitonesBySecondNote;
   }
+
 
   public static int countAdditionalSemitones(String note, boolean descendMode) {
     if (note == null) {
@@ -152,20 +163,6 @@ public class Intervals {
     return additionalSemitones;
   }
 
-  public static String intervalIdentification(String[] args) {
-
-    validateIntervalIdentificationInput(args);
-
-    String firstNote = args[0];
-    String secondNote = args[1];
-
-    boolean descendMode = (args.length == 3 && Objects.equals(args[2], "dsc"));
-
-    int degreeAmount = countDegree(args);
-    int semitoneAmount = countRealSemitones(firstNote, secondNote, descendMode);
-
-    return identifyIntervalByDegreeAndSemitone(degreeAmount, semitoneAmount);
-  }
 
   public static String identifyIntervalByDegreeAndSemitone(int degree, int semitones) {
 
@@ -187,12 +184,14 @@ public class Intervals {
   }
 
 
-  public static int countDegree(String[] notes) {
+  public static int countDegree(String firstNote, String secondNote, boolean descendMode) {
 
-    int firstNoteNumber = noteList.indexOf(notes[0].substring(0, 1));
-    int secondNoteNumber = noteList.indexOf(notes[1].substring(0, 1));
+    int firstNoteNumber = noteList.indexOf(firstNote.substring(0, 1));
+    int secondNoteNumber = noteList.indexOf(secondNote.substring(0, 1));
 
-    boolean descendMode = notes.length > 2 && Objects.equals(notes[2], "dsc");
+    if (firstNoteNumber == secondNoteNumber) {
+      return 8;
+    }
 
     //case we can just find straight distance between 2 notes
     if ((descendMode && firstNoteNumber > secondNoteNumber) || (!descendMode &&
@@ -206,7 +205,7 @@ public class Intervals {
       firstNoteNumber = secondNoteNumber;
       secondNoteNumber = tempNoteIndex;
     }
-
+    //going from the first note to the last one (B) and then to the second one
     return 7 - firstNoteNumber + secondNoteNumber + 1;
   }
 
@@ -230,6 +229,7 @@ public class Intervals {
       throw new RuntimeException(exceptionMessage);
     }
 
+    //counting input note matches with all the possible one (1 required)
     int noteMatchAmount = countNoteMatches(notes[1]);
 
     if (noteMatchAmount < 1) {
@@ -254,9 +254,10 @@ public class Intervals {
       throw new RuntimeException(exceptionMessage);
     }
 
+    //counting input note matches with all the possible one (2 required)
     int noteMatchAmount = countNoteMatches(notes[0], notes[1]);
 
-    if (noteMatchAmount < 2) {
+    if (noteMatchAmount != 2) {
       throw new RuntimeException(exceptionMessage);
     }
 
@@ -296,5 +297,4 @@ public class Intervals {
 
     return (int) noteMatchAmount.get();
   }
-
 }
