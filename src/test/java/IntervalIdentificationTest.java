@@ -1,6 +1,7 @@
 import com.innowise.Intervals;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -9,14 +10,13 @@ import org.junit.jupiter.api.Test;
 
 public class IntervalIdentificationTest {
 
-  public static List<String[]> inputArray;
+  public static List<String[]> INPUT_ARRAY;
+
 
   @BeforeAll
   public static void setup() {
 
-    inputArray = new ArrayList<>();
-
-    Stream<String[]> inputArrayStream = Stream.of(
+    INPUT_ARRAY = List.of(
         new String[]{"C", "D"},
         new String[]{"B", "F#", "asc"},
         new String[]{"Fb", "Gbb"},
@@ -27,96 +27,108 @@ public class IntervalIdentificationTest {
         new String[]{"E", "B", "dsc"},
         new String[]{"E#", "D#", "dsc"},
         new String[]{"B", "G#", "dsc"});
-
-    inputArrayStream.forEach(inputArray::add);
   }
+
+
+  @Test
+  public void checkInputExceptions() {
+    Stream<String[]> wrongInput = Stream.of(
+        new String[]{"Вb", "C", "as"},
+        new String[]{"D", "B", null},
+        new String[]{"F#", "Bb b", "dsc"},
+        new String[]{"#G", "Cb", "dsc"},
+        new String[]{null, "G#"},
+        new String[]{"m2", null, "asc"},
+        new String[]{"#", "E#", ""},
+        new String[]{"P4", "Ebb", "dsc"},
+        new String[]{"m2", "D#", null},
+        new String[]{"P8", "Gb", "asc"});
+
+    wrongInput.forEach(input -> Assertions.assertThrows(
+        RuntimeException.class,
+        () -> Intervals.intervalIdentification(input),
+        "Cannot identify the array"
+    ));
+  }
+
 
   @Test
   public void intervalIdentificationTest() {
 
-    List<String> expectedOutput = new ArrayList<>();
-    List<String> actualOutput = new ArrayList<>();
-
     //EXPECTED
-    Stream<String> expectedOutputStream = Stream.of("M2", "P5", "m2", "M7", "m2", "M3", "P4", "P4",
-        "M2", "m3");
-    expectedOutputStream.forEach(expectedOutput::add);
+    List<String> expectedOutput = Stream.of("M2", "P5", "m2", "M7", "m2", "M3", "P4", "P4",
+        "M2", "m3").toList();
 
     //ACTUAL
-    inputArray.forEach(inputData -> {
-      String currentOutput = Intervals.intervalIdentification(inputData);
-      actualOutput.add(currentOutput);
-    });
+    List<String> actualOutput = INPUT_ARRAY.stream().map(Intervals::intervalIdentification)
+        .toList();
 
+    //ASSERTION
     Assertions.assertEquals(expectedOutput, actualOutput);
   }
 
+
   @Test
-  public void countRealSemitonesTest() {
-    List<Integer> expectedAdditionalSemitones = new ArrayList<>();
-    List<Integer> actualAdditionalSemitones = new ArrayList<>();
-
-    List<String> notes = new ArrayList<>();
-    List<String> secondNotes = new ArrayList<>();
-    List<Boolean> descModes = new ArrayList<>();
-
-    //EXPECTED
-    Stream<Integer> expectedAdditionalSemitonesStream = Stream.of(4, 6, 5, 5, 7, 11, 9, 5);
-    expectedAdditionalSemitonesStream.forEach(expectedAdditionalSemitones::add);
-    IntStream iteratorStream = IntStream.range(0, expectedAdditionalSemitones.size());
+  public void identifyIntervalByDegreeAndSemitoneTest() {
 
     //INPUT
-    Stream<String> notesStream = Stream.of("Cb", "Bbb", "Abb", "E##", "E#", "Bb", "D#", "G#");
-    Stream<String> secondNoteStream = Stream.of("Abb", "Eb", "B#", "B", "C", "A", "F#", "Db");
-    Stream<Boolean> descModesStream = Stream.of(true, true, false, false, false, false, true,
-        false);
-
-    secondNoteStream.forEach(secondNotes::add);
-    notesStream.forEach(notes::add);
-    descModesStream.forEach(descModes::add);
+    List<Integer> inputSemitones = Stream.of(1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12).toList();
+    List<Integer> inputDegrees = Stream.of(2, 2, 3, 3, 4, 5, 6, 6, 7, 7, 8).toList();
+    List<String> expectedIntervals = Stream.of("m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7",
+        "M7", "P8").toList();
 
     //ACTUAL
-    iteratorStream.forEach(i -> {
-      int currentSemitone = Intervals.countRealSemitones(notes.get(i),
-          secondNotes.get(i), descModes.get(i));
-      actualAdditionalSemitones.add(currentSemitone);
-    });
+    List<String> actualIntervals = IntStream.range(0, inputSemitones.size())
+        .mapToObj(i -> Intervals.identifyIntervalByDegreeAndSemitone(inputDegrees.get(i),
+            inputSemitones.get(i)
+        ))
+        .toList();
 
+    //ASSERTION
+    Assertions.assertEquals(expectedIntervals, actualIntervals);
+  }
+
+
+  @Test
+  public void countRealSemitonesTest() {
+    //INPUT
+    List<String> notes = Stream.of("Cb", "Bbb", "Abb", "E##", "E#", "Bb", "D#", "G#").toList();
+    List<String> secondNotes = Stream.of("Abb", "Eb", "B#", "B", "C", "A", "F#", "Db").toList();
+    List<Boolean> descModes = Stream.of(true, true, false, false, false, false, true,
+        false).toList();
+
+    //EXPECTED
+    List<Integer> expectedAdditionalSemitones = Stream.of(4, 6, 5, 5, 7, 11, 9, 5)
+        .collect(Collectors.toList());
+
+    //ACTUAL
+    List<Integer> actualAdditionalSemitones = IntStream.range(0, expectedAdditionalSemitones.size())
+        .map(i -> Intervals.countRealSemitones(notes.get(i), secondNotes.get(i), descModes.get(i)))
+        .boxed()
+        .collect(Collectors.toList());
+
+    //ASSERTION
     Assertions.assertEquals(expectedAdditionalSemitones, actualAdditionalSemitones);
   }
+
 
   @Test
   public void countDegreeTest() {
 
-    List<Integer> expectedAdditionalDegrees = new ArrayList<>();
-    List<Integer> actualAdditionalDegrees = new ArrayList<>();
-
-    List<String> notes = new ArrayList<>();
-    List<String> secondNotes = new ArrayList<>();
-    List<Boolean> descModes = new ArrayList<>();
+    //INPUT
+    List<String> notes = Arrays.asList("D", "F", "F", "G", "D", "B", "A", "G");
+    List<String> secondNotes = Arrays.asList("A", "E", "B", "B", "D", "A", "E", "D");
+    List<Boolean> descModes = Arrays.asList(false, true, false, true, true, false, true, false);
 
     //EXPECTED
-    Stream<Integer> expectedAdditionalDegreesStream = Stream.of(5, 2, 4, 6, 8, 7, 4, 5);
-    expectedAdditionalDegreesStream.forEach(expectedAdditionalDegrees::add);
-
-    IntStream iteratorStream = IntStream.range(0, expectedAdditionalDegrees.size());
-
-    //INPUT
-    Stream<String> notesStream = Stream.of("D", "F", "F", "G", "D", "B", "A", "G");
-    Stream<String> secondNoteStream = Stream.of("A", "E", "B", "B", "D", "A", "E", "D");
-    Stream<Boolean> descModesStream = Stream.of(false, true, false, true, true, false, true,
-        false);
-
-    notesStream.forEach(notes::add);
-    secondNoteStream.forEach(secondNotes::add);
-    descModesStream.forEach(descModes::add);
+    List<Integer> expectedAdditionalDegrees = Stream.of(5, 2, 4, 6, 8, 7, 4, 5).toList();
 
     //ACTUAL
-    iteratorStream.forEach(i -> {
-      int currentDegree = Intervals.countDegree(notes.get(i), secondNotes.get(i), descModes.get(i));
-      actualAdditionalDegrees.add(currentDegree);
-    });
+    List<Integer> actualAdditionalDegrees = IntStream.range(0, notes.size())
+        .mapToObj(i -> Intervals.countDegree(notes.get(i), secondNotes.get(i), descModes.get(i)))
+        .collect(Collectors.toList());
 
+    //ASSERTION
     Assertions.assertEquals(expectedAdditionalDegrees, actualAdditionalDegrees);
   }
 }
