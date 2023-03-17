@@ -8,6 +8,7 @@ Note: the task is in the beta version, so to ise it by yourself you should use t
 1. Download and installate the IntellijIDEA or any other IDE for Java.
 2. Build the project (Ctrl + F9 for IntellijIDEA)
 3. Go to folder: src/test/java and fing MainTest.java
+
 ![fea6b5b1-4c56-4cd8-b1b3-b5f499eaedfa](https://user-images.githubusercontent.com/113788413/225849530-d44fb4c7-c8b0-4cfd-b278-41548b6f32f8.jpg)
 4. There you can see few test annotated with @Test. Feel free to write your own tests: just write "public void", then any name, starting with letter, then "(){}". Between the curly braces create new input with: String[] "input_any_string_name_here" = new String[]{"A", "B", "C"}; change A, B and C here to notes and intervals that you need. Then write ; at the end of the line.
 5. Go to the next line and write System.out.println(); In this braces you only need to write Intervals.intervalsConstruction() or Intervals.intervalIdentification(), and put you string_name (1 line higher) to this braces;
